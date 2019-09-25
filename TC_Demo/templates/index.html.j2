@@ -1,0 +1,38 @@
+<style>
+table {
+  font-family: arial, sans-serif;
+}
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+<html>
+<header><title>{{ ansible_default_ipv4.address }} </title></header>
+<body>
+<img src="Ansible_logo.png" alt="Ansible Logo" width="225" height="278">
+<img src="techconnect.jpg" alt="TechConnect 2019">
+
+<br><br><br>
+<table>
+	<tr>
+		<th>Host Operating System</th>
+		<td>{{ ansible_distribution }}</td>
+	</tr>
+	<tr>
+		<th>Host Distribution</th>
+		<td>{{ansible_distribution_version }}</td>
+	</tr>
+	<tr>
+		<th>Host IP</th>
+		<td>{{ ansible_default_ipv4.address }}</td>
+	</tr>
+</table>
+<br><br><br>
+Hello World!
+</body>
+</html>

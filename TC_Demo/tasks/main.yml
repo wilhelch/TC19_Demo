@@ -1,0 +1,220 @@
+---
+# Installs Augeas and Required Python Modules
+   - name: Install Augeas
+     apt:
+      name:  "{{ augeas_packages }}"
+      state: latest
+
+#Installs Logwatch
+   - name: Install Logwatch
+     apt:
+       name: 'logwatch'
+       state: latest
+
+#Installs Custom Augeas Lens for SCOM
+   - name: Install SCOM Augeas Lens
+     copy:
+       src: scom.aug
+       dest: /usr/share/augeas/lenses/dist/
+       owner: root
+       group: root
+       mode: 0644
+
+#Checks for RSS SA Home Folders
+   - name: Check if Wilhelch Home Folder exists
+     stat:
+       path: /home/wilhelch
+     register: wilhelch
+
+   - name: Check if figaljea Home Folder exists
+     stat:
+       path: /home/figaljea
+     register: figaljea
+
+   - name: Check if Horenea Home Folder exists
+     stat:
+       path: /home/horencea
+     register: horencea
+
+#Installs RSS SA SSH Keys if respective home folder exists
+   - name: Wilhelmsen SSH Key
+     authorized_key:
+       user: wilhelch
+       state: present
+       key: "ssh-rsa ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDH/uBjtCQFSXYwesdvVJ6tN1rszDzy5OjHgDusI5j5K/i8gOauqXf2jlpEDN1Q9K8JKVHhR6PPdNj8fFHV42ZQ+2V4chM2X+La2Q4xQNG60v67jL3fE/xk4ndnBbTc/RvIBuUXrMAOXhmIvs+ZlCe33zvOCR5MTy7Dm0JoYqcAMKtuIftTWcCyIfIaFnAu/4d+LfhINKzlejJzCu8ET+e55XXXcs4c4vWUOIVdoh6jqnnDz3bdcOqTQU888hx/dxuY4lYKIEeesiP9BhQ1xdHhWW6BrNQmM9jEv/FhcEKt+8oAIaNt5UWWxtHFX65kyUo5i+WbaVCNry085p8wVpCd4u42X6Fl9T8ZipIuWa2/c4uwldNaCY5UJxyzbi6J+k4ynIfcNTvY+P5Ir5gepFF7lDnpoKJfKVLQ8DXRrNAoKWi+AxlETMmL35pOmmALjjtm7aMQF0GXIa6zfmtg/HVvfreNQKL+3UfbwfctQMGg+qPY287f0R9ctohUvUBHJQwYfL6lpmbhtfA27Gv2nNzOsdV5zMkr6wKrXZfCo2YXDsZFWnS2hnMQ3soZRwtst8dhDBtxiuu+LC4csKQ27FKfsjgqtIAJEq9vauPucCOzluYHG878seqXtdLqOLkh5Sbg09aN8gqA7yJ3RQvLl4g/BWiGW0h5brxt2APSrPDK8w== Christopher.Wilhelmsen@cuanschutz.edu"
+     when: wilhelch.stat.exists == True
+
+    ##Creates the local TechConnect Account
+    ##NOTE: This creates the account it does not provide a secret/password for the account.  This is intentional.
+   - name: Add TechConnect User
+     user:
+       name: techconnect
+
+   - name: Add TechConnect to sudoers
+     copy:
+       dest: "/etc/sudoers.d/techconnect"
+       owner: root
+       group: root
+       mode: 0440
+       content: "%techconnect     ALL=(ALL)       LOG_INPUT: LOG_OUTPUT: ALL"
+
+   - name: Check if TechConnect Home Folder exists
+     stat:
+       path: /home/techconnect
+     register: techconnect
+
+#Adds RSS SA ssh keys to techconnect authorized_keys
+   - name: Wilhelmsen SSH Key
+     authorized_key:
+       user: techconnect
+       state: present
+       comment: "rsa-key-wilhelchea-techconnect"
+       key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDH/uBjtCQFSXYwesdvVJ6tN1rszDzy5OjHgDusI5j5K/i8gOauqXf2jlpEDN1Q9K8JKVHhR6PPdNj8fFHV42ZQ+2V4chM2X+La2Q4xQNG60v67jL3fE/xk4ndnBbTc/RvIBuUXrMAOXhmIvs+ZlCe33zvOCR5MTy7Dm0JoYqcAMKtuIftTWcCyIfIaFnAu/4d+LfhINKzlejJzCu8ET+e55XXXcs4c4vWUOIVdoh6jqnnDz3bdcOqTQU888hx/dxuY4lYKIEeesiP9BhQ1xdHhWW6BrNQmM9jEv/FhcEKt+8oAIaNt5UWWxtHFX65kyUo5i+WbaVCNry085p8wVpCd4u42X6Fl9T8ZipIuWa2/c4uwldNaCY5UJxyzbi6J+k4ynIfcNTvY+P5Ir5gepFF7lDnpoKJfKVLQ8DXRrNAoKWi+AxlETMmL35pOmmALjjtm7aMQF0GXIa6zfmtg/HVvfreNQKL+3UfbwfctQMGg+qPY287f0R9ctohUvUBHJQwYfL6lpmbhtfA27Gv2nNzOsdV5zMkr6wKrXZfCo2YXDsZFWnS2hnMQ3soZRwtst8dhDBtxiuu+LC4csKQ27FKfsjgqtIAJEq9vauPucCOzluYHG878seqXtdLqOLkh5Sbg09aN8gqA7yJ3RQvLl4g/BWiGW0h5brxt2APSrPDK8w== Christopher.Wilhelmsen@cuanschutz.edu"
+     when: techconnect.stat.exists == True
+
+#Secures SSHD Configuration Based on the Recommendations Here: https://infosec.mozilla.org/guidelines/openssh
+   - name: Create SSHD Items
+     augeas:
+       command: "ins"
+       path: "/files/etc/ssh/sshd_config"
+       label: "{{ item.path }}"
+     with_items:
+      - path: 'Protocol'
+      - path: 'LogLevel'
+      - path: 'ClientAliveInterval'
+      - path: 'ClientAliveCountMax'
+      - path: 'Banner'
+      - path: 'PermitRootLogin'
+      - path: 'PermitEmptyPasswords'
+      - path: 'ChallengeResponseAuthentication'
+      - path: 'GSSAPIAuthentication'
+     register: path_set
+
+   - name: Set SSHD Values
+     augeas:
+       command: "set"
+       path: "/files/etc/ssh/sshd_config/{{ item.path }}"
+       value: "{{ item.value }}"
+     with_items:
+       - path: "Protocol"
+         value: "2"
+       - path: 'LogLevel'
+         value: 'VERBOSE'
+       - path: 'ClientAliveInterval'
+         value: '900'
+       - path: 'ClientAliveCountMax'
+         value: '0'
+       - path: 'Banner'
+         value: '/etc/issue'
+       - path: 'PermitRootLogin'
+         value: 'without-password'
+       - path: 'PermitEmptyPasswords'
+         value: 'no'
+       - path: 'ChallengeResponseAuthentication'
+         value: 'no'
+       - path: 'GSSAPIAuthentication'
+         value: 'no'
+       - path: 'Ciphers/1'
+         value: 'chacha20-poly1305@openssh.com'
+       - path: 'Ciphers/2'
+         value: 'aes256-gcm@openssh.com'
+       - path: 'Ciphers/3'
+         value: 'aes256-ctr'
+       - path: 'Subsystem/sftp'
+         value: '/usr/lib/openssh/sftp-server -f AUTHPRIV -l INFO'
+       - path: 'MACs/1'
+         value: 'hmac-sha2-512-etm@openssh.com'
+       - path: 'MACs/2'
+         value: 'hmac-sha2-256-etm@openssh.com'
+       - path: 'MACs/3'
+         value: 'umac-128-etm@openssh.com'
+       - path: 'MACs/4'
+         value: 'hmac-sha2-512'
+       - path: 'MACs/5'
+         value: 'hmac-sha2-256'
+       - path: 'MACs/6'
+         value: umac-128@openssh.com
+       - path: 'KexAlgorithms/1'
+         value: 'curve25519-sha256@libssh.org'
+       - path: 'KexAlgorithms/2'
+         value: 'ecdh-sha2-nistp521'
+       - path: 'KexAlgorithms/3'
+         value: 'ecdh-sha2-nistp384'
+       - path: 'KexAlgorithms/4'
+         value: 'ecdh-sha2-nistp256'
+       - path: 'KexAlgorithms/5'
+         value: 'diffie-hellman-group-exchange-sha256'
+     when: path_set
+     notify:
+       - Restart_sshd
+
+#Adds Internal and External UCDenver Intermediate and Root Certificate Authority Certificates to the system
+   - name: UCDenver PVT Intermediate Certificate in /etc/pki/tls/certs
+     copy:
+       src: intermPVT.cer
+       dest: /etc/ssl/certs
+       owner: root
+       group: root
+       mode: 0600
+
+   - name: UCDenver EDU Intermediate Certificate in /etc/pki/tls/certs
+     copy:
+       src: intermEDU.cer
+       dest: /etc/ssl/certs
+       owner: root
+       group: root
+       mode: 0600
+
+#Creates Custom RSS/OIT OpenSSL Configuration for Certificate Requests
+   - name: Custom RSS OpenSSL Configuration for Certificate Requests
+     copy:
+       src: openssl.cnf
+       dest: /etc/ssl
+       owner: root
+       group: root
+       mode: 0644
+
+   - name: Install Apache2
+     apt:
+       name: 'apache2'
+       state: latest
+
+   - name: Install TechConnect Logo
+     copy:
+       src: techconnect.jpg
+       dest: /var/www/html/
+       owner: root
+       group: root
+       mode: 0644
+
+   - name: Install Ansible Logo
+     copy:
+       src: Ansible_logo.png
+       dest: /var/www/html/
+       owner: root
+       group: root
+       mode: 0644
+
+   - name: Install New Index.html
+     template:
+       src: index.html.j2
+       dest: /var/www/html/index.html
+       owner: root
+       group: root
+       mode : 0644
+
+#Runs All Queued Handlers and Refreshes Ansible Facts
+   - name: Flushing All Present Handlers
+     meta: flush_handlers
+
+   - name: Refreshing Ansible Facts
+     setup:
+
+
+   #Reboots Target System
+   - name: Reboot_Target_System
+     shell: 'sleep 5 && reboot'
+     async: 1
+     poll: 0
+     notify: Wait_For_Restart
+...

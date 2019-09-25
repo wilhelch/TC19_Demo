@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: Tomasz Rybarczyk
+  description: Augeas module
+  license: 'BSD-3-Clause'
+  platforms:
+  - name: GenericLinux
+    versions:
+    - all
+  galaxy_tags: ['system', 'augeas']
+
+dependencies: []

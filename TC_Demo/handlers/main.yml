@@ -1,0 +1,15 @@
+---
+# handlers file for TC_Demo
+- name: Restart_sshd
+  service:
+    name: sshd
+    state: restarted
+
+#Waits Ten Minutes for System to Return for a Restart
+- name: Wait_For_Restart
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 600
+...

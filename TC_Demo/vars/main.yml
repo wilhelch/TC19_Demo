@@ -1,0 +1,6 @@
+---
+  augeas_packages:
+    - 'augeas-tools'
+    - 'augeas-doc'
+    - 'python3-augeas'
+...

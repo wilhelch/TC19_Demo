@@ -1,0 +1,8 @@
+---
+ - hosts: managed
+   remote_user: wilhelch
+   become: true
+   roles:
+     - ansible-augeas
+     - TC_Demo
+...
